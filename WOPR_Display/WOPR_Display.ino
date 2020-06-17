@@ -97,7 +97,7 @@ char missile_code[12] = {'A', 'B', 'C', 'D', 'E', 'F', '0', '1', '2', '3', '4', 
 
 char missile_code_movie[12] = {'C', 'P', 'E', ' ', '1', '7', '0', '4', ' ', 'T', 'K', 'S'};
 
-char missile_code_message[12] = {'I', ' ', 'L', 'O', 'V', 'E', ' ', 'B', 'O', 'O', 'B', 'S'};
+char missile_code_message[12] = {'I', ' ', 'L', 'O', 'V', 'E', ' ', 'C', 'O', 'D', 'E', ' '};
 
 uint8_t code_solve_order_movie[10] = {7, 1, 4, 6, 11, 2, 5, 0, 10, 9}; // 4 P 1 0 S E 7 C K T
 
