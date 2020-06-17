@@ -1,4 +1,4 @@
-/*************************************************** 
+/***************************************************
   War Games - W.O.P.R. Missile Codes
   2020 UNexpected Maker
   Licensed under MIT Open Source
@@ -8,7 +8,7 @@
 
   W.O.P.R is available on tindie
   https://www.tindie.com/products/seonr/wopr-missile-launch-code-display-kit/
-  
+
   Wired up for use with the TinyPICO ESP32 Development Board
   https://www.tinypico.com/shop/tinypico
 
@@ -30,7 +30,7 @@
 
 // Defines
 #ifndef _BV
-  #define _BV(bit) (1<<(bit))
+#define _BV(bit) (1<<(bit))
 #endif
 
 #define BUT1 14 // front lef button
@@ -40,7 +40,7 @@
 
 // NTP Wifi Time
 const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 3600 * 11;
+const long  gmtOffset_sec = 3600 * 0;
 const int   daylightOffset_sec = 3600;
 
 // Program & Menu state
@@ -48,9 +48,9 @@ uint8_t currentState = 0; // 0 - menu, 1 - running
 uint8_t currentMode = 0; // 0 - movie simulation, 1 - random sequence, 2 - message, 3 - clock
 
 /* Code cracking stuff
- * Though this works really well, there are probably much nicer and cleaner 
- * ways of doing this, so feel free to improve it and make a pull request!
- */
+   Though this works really well, there are probably much nicer and cleaner
+   ways of doing this, so feel free to improve it and make a pull request!
+*/
 uint8_t counter = 0;
 unsigned long nextTick = 0;
 unsigned long nextSolve = 0;
@@ -71,14 +71,17 @@ int freq = 2000;
 int channel = 0;
 int resolution = 8;
 
+//Time Defcon stuff
+byte timeTensMinutes = 99;
+
 // RGB stuff
 unsigned long nextRGB = 0;
 long nextPixelHue = 0;
-uint32_t defcon_colors[] = { 
-  Color(255, 255, 255), 
-  Color(255, 0, 0), 
-  Color(255, 255, 0), 
-  Color(0, 255, 0), 
+uint32_t defcon_colors[] = {
+  Color(255, 255, 255),
+  Color(255, 0, 0),
+  Color(255, 255, 0),
+  Color(0, 255, 0),
   Color(0, 0, 255),
 };
 
@@ -94,11 +97,11 @@ char missile_code[12] = {'A', 'B', 'C', 'D', 'E', 'F', '0', '1', '2', '3', '4', 
 
 char missile_code_movie[12] = {'C', 'P', 'E', ' ', '1', '7', '0', '4', ' ', 'T', 'K', 'S'};
 
-char missile_code_message[12] = {'L', 'O', 'L', 'Z', ' ', 'F', 'O', 'R', ' ', 'Y', 'O', 'U'};
+char missile_code_message[12] = {'I', ' ', 'L', 'O', 'V', 'E', ' ', 'B', 'O', 'O', 'B', 'S'};
 
-uint8_t code_solve_order_movie[10] = {7,1,4,6,11,2,5,0,10,9};  // 4 P 1 0 S E 7 C K T
+uint8_t code_solve_order_movie[10] = {7, 1, 4, 6, 11, 2, 5, 0, 10, 9}; // 4 P 1 0 S E 7 C K T
 
-uint8_t code_solve_order_random[12] = {99,99,99,99,99,99,99,99,99,99,99,99};
+uint8_t code_solve_order_random[12] = {99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
 
 // Initialise the buttons using OneButton library
 OneButton Button1(BUT1, false);
@@ -115,7 +118,7 @@ void setup()
     // This is not good...
     delay(1000);
   }
-  
+
   // Attatch button IO for OneButton
   Button1.attachClick(BUT1Press);
   Button2.attachClick(BUT2Press);
@@ -137,10 +140,10 @@ void setup()
   ledcAttachPin(DAC, channel);
 
   /* Initialise WiFi to get the current time.
-   * Once the time is obtained, WiFi is disconnected and the internal 
-   * ESP32 RTC is used to keep the time
-   * Make sure you have set your SSID and Password in secret.h
-   */
+     Once the time is obtained, WiFi is disconnected and the internal
+     ESP32 RTC is used to keep the time
+     Make sure you have set your SSID and Password in secret.h
+  */
   StartWifi();
 
   // Display MENU
@@ -153,16 +156,16 @@ void StartWifi()
   Serial.printf("Connecting to %s ", ssid);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
+    delay(500);
+    Serial.print(".");
   }
   Serial.println(" CONNECTED");
-  
+
   //init and get the time
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
   struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
+  if (!getLocalTime(&timeinfo)) {
     Serial.println("Failed to obtain time");
     return;
   }
@@ -187,7 +190,7 @@ void BUT1Press()
     if ( currentState == 1 )
     {
       currentState = 0;
-            
+
       DisplayText( "MENU" );
 
       //Shutdown the audio is it's beeping
@@ -213,7 +216,7 @@ void BUT1Press()
 
     Serial.print("Current State: ");
     Serial.print( currentState );
-    
+
     Serial.print("  Current Mode: ");
     Serial.println( currentMode );
   }
@@ -226,7 +229,7 @@ void BUT2Press()
   {
     nextButtonPress = millis() + 10;
 
-    // If in the menu, start whatever menu option we are in 
+    // If in the menu, start whatever menu option we are in
     if ( currentState == 0 )
     {
       // Set the defcon state if we are not the clock, otherwise clear the RGB
@@ -234,7 +237,7 @@ void BUT2Press()
         RGB_SetDefcon(5, true);
       else
         RGB_Clear(true);
-        
+
       ResetCode();
       Clear();
       currentState = 1;
@@ -250,16 +253,30 @@ void DisplayTime()
 {
   // Store the current time into a struct
   struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
+  if (!getLocalTime(&timeinfo)) {
     Serial.println("Failed to obtain time");
     return;
   }
   // Formt the contents of the time struct into a string for display
   char DateAndTimeString[12];
   if ( timeinfo.tm_hour < 10 )
-    sprintf(DateAndTimeString, "   %d %02d %02d", timeinfo.tm_hour,timeinfo.tm_min,timeinfo.tm_sec);
+    sprintf(DateAndTimeString, "   %d %02d %02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
   else
-    sprintf(DateAndTimeString, "  %d %02d %02d", timeinfo.tm_hour,timeinfo.tm_min,timeinfo.tm_sec);
+    sprintf(DateAndTimeString, "  %d %02d %02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+
+  if (timeTensMinutes != int(((timeinfo.tm_min + 10) / 10) - 1) ) {
+    Serial.println("Time reached next ten minutes segment");
+    timeTensMinutes = int(((timeinfo.tm_min + 10) / 10) - 1);
+    //RGB_Clear(true); calling this stopped the defcon appearing
+    if ((timeTensMinutes > 0 ) && (timeTensMinutes < 6)) {
+      Serial.println("Defcon " + String(timeTensMinutes));
+      RGB_SetDefcon(timeTensMinutes, true);
+    } else {
+      Serial.println("Clearing Defcon lights");
+      RGB_Clear();
+    }
+  }
 
   // Iterate through each digit on the display and populate the time, or clear the digit
   uint8_t curDisplay = 0;
@@ -317,7 +334,7 @@ void FillCodes()
   int character_index = 0;
   char c = 0;
   char c_code = 0;
-  
+
   for ( int i = 0; i < 12; i++ )
   {
     c = displaybuffer[i];
@@ -350,7 +367,7 @@ void RandomiseSolveOrder()
     uint8_t ind = random(0, 12);
     while ( code_solve_order_random[ind] < 99 )
       ind = random(0, 12);
-  
+
     code_solve_order_random[ind] = i;
   }
 }
@@ -368,26 +385,26 @@ void ResetCode()
   else if ( currentMode == 1 )
   {
     solveStepMulti = 0.5;
-    
+
     // Randomise the order in which we solve this code
     RandomiseSolveOrder();
 
     // Set the code length and populate the code with random chars
     solveCountFinished = 12;
-    
+
     for ( uint8_t i = 0; i < 12; i++ )
     {
       Serial.print("Setting code index ");
       Serial.print(i);
-     
+
       // c is a character we need to randomise
       char c = random( 48, 91 );
       while ( c > 57 && c < 65 )
         c = random( 48, 91 );
 
 
-     Serial.print(" to char ");
-     Serial.println( c );
+      Serial.print(" to char ");
+      Serial.println( c );
 
       missile_code[i] = c;
     }
@@ -395,7 +412,7 @@ void ResetCode()
   else if ( currentMode == 2 )
   {
     solveStepMulti = 0.5;
-    
+
     // Randomise the order in which we solve this code
     RandomiseSolveOrder();
 
@@ -406,7 +423,7 @@ void ResetCode()
   }
 
   // Set the first solve time step for the first digit lock
-  
+
   solveStep = GetNextSolveStep();
   nextSolve = millis() + solveStep;
   solveCount = 0;
@@ -423,10 +440,10 @@ void ResetCode()
 }
 
 /*  Solve the code based on the order of the solver for the current mode
- *  This is fake of course, but so was the film!
- *  The reason we solve based on a solver order, is so we can solve the code 
- *  in the order it was solved in the movie.
- */
+    This is fake of course, but so was the film!
+    The reason we solve based on a solver order, is so we can solve the code
+    in the order it was solved in the movie.
+*/
 
 void SolveCode()
 {
@@ -435,7 +452,7 @@ void SolveCode()
   {
     // Grab the next digit from the code based on the mode
     uint8_t index = 0;
-    
+
     if ( currentMode == 0 )
     {
       index = code_solve_order_movie[ solveCount ];
@@ -447,13 +464,13 @@ void SolveCode()
       displaybuffer[ index ] = missile_code[ index ];
     }
 
-    Serial.println("Found "+ String(displaybuffer[ index ]) +" @ index: " + String(solveCount));
-    
+    Serial.println("Found " + String(displaybuffer[ index ]) + " @ index: " + String(solveCount));
+
     // move tghe solver to the next digit of the code
     solveCount++;
 
     // Get current percentage of code solved so we can set the defcon display
-    float solved = 1 - ( (float)solveCount/(float)solveCountFinished);
+    float solved = 1 - ( (float)solveCount / (float)solveCountFinished);
 
     Serial.println("Solved " + String(solved));
 
@@ -496,22 +513,22 @@ void Display()
 }
 
 void RGB_SetDefcon( byte level, bool force )
-{      
-    // Only update the defcon display if the value has changed
-    // to prevent flickering
-    if ( lastDefconLevel != level || force )
-    {
-      lastDefconLevel = level;
-      
-      // Clear the RGB LEDs
-      RGB_Clear();
-      
-      // Level needs to be clamped to between 0 and 4
-      byte newLevel = constrain(level-1, 0, 4);
-      leds[newLevel] = defcon_colors[newLevel];
-      
-      RGB_FillBuffer();
-    }
+{
+  // Only update the defcon display if the value has changed
+  // to prevent flickering
+  if ( lastDefconLevel != level || force )
+  {
+    lastDefconLevel = level;
+
+    // Clear the RGB LEDs
+    RGB_Clear();
+
+    // Level needs to be clamped to between 0 and 4
+    byte newLevel = constrain(level - 1, 0, 4);
+    leds[newLevel] = defcon_colors[newLevel];
+
+    RGB_FillBuffer();
+  }
 }
 
 void RGB_Rainbow(int wait)
@@ -520,12 +537,12 @@ void RGB_Rainbow(int wait)
   {
     nextRGB = millis() + wait;
     nextPixelHue += 256;
-    
+
     if ( nextPixelHue > 65536 )
       nextPixelHue = 0;
 
     // For each RGB LED
-    for(int i=0; i<5; i++)
+    for (int i = 0; i < 5; i++)
     {
       int pixelHue = nextPixelHue + (i * 65536L / 5);
       leds[i] = gamma32(ColorHSV(pixelHue));
@@ -567,14 +584,14 @@ void loop()
         {
           beeping = !beeping;
           nextBeep = millis() + 500;
-    
+
           if ( beeping )
           {
             if ( beepCount > 0 )
             {
               RGB_SetDefcon(1, true);
               FillCodes();
-              beepCount--;        
+              beepCount--;
               ledcWriteTone(channel, 1500);
             }
             else
@@ -590,24 +607,24 @@ void loop()
             ledcWriteTone(channel, 0 );
           }
         }
-    
+
         // We are solved, so no point running any of the code below!
         return;
       }
-  
+
       // Only update the displays every "tickStep"
       if ( nextTick < millis() )
       {
         nextTick = millis() + tickStep;
-  
+
         // This displays whatever teh current state of the display is
         FillCodes();
-  
+
         // If we are not currently beeping, play some random beep/bop computer-y sounds
         if ( !beeping )
-          ledcWriteTone(channel, random(90,250));
+          ledcWriteTone(channel, random(90, 250));
       }
-  
+
       // This is where we solve each code digit
       // The next solve step is a random length to make it take a different time every run
       if ( nextSolve < millis() )
@@ -618,7 +635,7 @@ void loop()
         //
         SolveCode();
       }
-  
+
       // Zturn off any beeping if it's trying to beep
       if ( beeping )
       {
