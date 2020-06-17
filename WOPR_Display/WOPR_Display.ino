@@ -241,6 +241,8 @@ void BUT2Press()
       ResetCode();
       Clear();
       currentState = 1;
+      //Reset so that the defcon light displays again
+      timeTensMinutes = 99;
     }
   }
 
